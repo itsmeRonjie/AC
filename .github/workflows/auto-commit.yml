@@ -32,17 +32,17 @@ jobs:
 
       - name: Commit updated timestamp
         run: |
-          # # Random chance to skip (e.g., ~50%)
-          # if [ $((RANDOM % 2)) -ne 0 ]; then
-          #   echo "Skipping this run randomly."
-          #   exit 0
-          # fi
+          # Random chance to skip (e.g., ~50%)
+          if [ $((RANDOM % 2)) -ne 0 ]; then
+            echo "Skipping this run randomly."
+            exit 0
+          fi
 
           git config --local user.email "itsmeronjie@gmail.com"
           git config --local user.name "itsmeRonjie"
 
-          # timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-          # echo "$timestamp" > LAST_UPDATED
+          timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+          echo "$timestamp" > LAST_UPDATED
 
           git add -A
 
