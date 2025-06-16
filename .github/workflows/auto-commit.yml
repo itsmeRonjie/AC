@@ -1,69 +1,35 @@
-name: Auto Commit
-
+name: Auto Commit Every 5 Minutes
 on:
-  push:
-    branches:
-      - master
-
   schedule:
-    - cron: "*/1 * * * *"  # Run every 30 minutes
-
-permissions:
-  contents: write  # Ensure permission for scheduled commits
-
+    - cron: '*/1 * * * *'  # Runs every 5 minutes
 jobs:
-  auto_commit:
+  commit:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write  # Required to commit and push changes
     steps:
-      - name: Show current ref
-        run: echo "::debug::Ref = ${{ github.ref }}"
-
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
-          fetch-depth: 0
-
-      - name: Update timestamp
+          persist-credentials: false  # Avoid using default token for push
+          fetch-depth: 0  # Full history for proper git operations
+      - name: Update file
         run: |
-          timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-          echo "$timestamp" > LAST_UPDATED
-
-      - name: Commit updated timestamp
+          FILE="auto_commit_log.md"
+          if [ ! -f "$FILE" ]; then
+            echo "# Auto Commit Log" > "$FILE"
+            echo "Commit #1 at $(date -u)" >> "$FILE"
+          else
+            COUNT=$(grep -oP 'Commit #\K\d+' "$FILE" || echo 0)
+            NEXT=$((COUNT + 1))
+            sed -i "/Commit #/c\Commit #$NEXT at $(date -u)" "$FILE"
+          fi
+      - name: Commit and push
         run: |
-          # # Random chance to skip (e.g., ~50%)
-          # if [ $((RANDOM % 2)) -ne 0 ]; then
-          #   echo "Skipping this run randomly."
-          #   exit 0
-          # fi
-
-          git config --local user.email "itsmeronjie@gmail.com"
-          git config --local user.name "itsmeRonjie"
-
-          timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-          echo "$timestamp" > LAST_UPDATED
-
-          git add -A
-
-          messages=(
-            "chore(bot): updated timestamp ⏰"
-            "chore(bot): keeping things fresh 🔄"
-            "chore(bot): just another automated update 🤖"
-            "chore(bot): keeping the heartbeat going 💓"
-            "chore(bot): routine check-in 📅"
-            "chore(bot): another tick on the clock 🕒"
-            "chore(bot): minor update, major vibes ✨"
-            "chore(bot): automation doing its thing 🚀"
-            "chore(bot): time update from the bot 🛠️"
-            "chore(bot): staying alive with updates 🎵"
-          )
-
-          random_index=$((RANDOM % ${#messages[@]}))
-          git commit -m "${messages[$random_index]}" || echo "No changes to commit."
-
-      - name: Push changes
-        uses: ad-m/github-push-action@v0.6.0
-        with:
-          directory: "."
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          git config user.name "itsmeRonjie"
+          git config user.email "itsmeRonjie@gmail.com"
+          git add auto_commit_log.md
+          git commit -m "Auto-commit: Update auto_commit_log.md"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
