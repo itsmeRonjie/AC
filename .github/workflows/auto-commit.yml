@@ -6,7 +6,7 @@ on:
       - master
 
   schedule:
-    - cron: "*/1 * * * *"  # Run every 30 minutes
+    - cron: "*/30 * * * *"  # Run every 30 minutes
 
 permissions:
   contents: write  # Ensure permission for scheduled commits
