@@ -5,10 +5,10 @@ on:
     branches:
       - master
   schedule:
-    - cron: "*/1 * * * *"  # Run every 30 minutes
+    - cron: "*/30 * * * *" 
 
 permissions:
-  contents: write  # Ensure permission for scheduled commits
+  contents: write 
 
 jobs:
   auto_commit:
@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Random delay
-        run: sleep $((RANDOM % 1801))  # Random delay between 0 and 1800 seconds (30 minutes)
+        run: sleep $((RANDOM % 1801))
 
       - name: Show current ref
         run: echo "::debug::Ref = ${{ github.ref }}"
