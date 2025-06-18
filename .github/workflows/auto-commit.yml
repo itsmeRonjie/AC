@@ -35,7 +35,7 @@ jobs:
       - name: Commit updated timestamp
         run: |
           git config --local user.email "itsmeronjie@gmail.com"
-          git config --local user.name "ronjie"
+          git config --local user.name "itsmeRonjie"
 
           timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
           echo "$timestamp" > LAST_UPDATED
