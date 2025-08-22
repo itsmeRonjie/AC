@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Random delay
-        run: sleep $((RANDOM % 5001))
+        run: sleep $((RANDOM % 7501))
 
       - name: Show current ref
         run: echo "::debug::Ref = ${{ github.ref }}"
