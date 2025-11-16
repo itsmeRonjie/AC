@@ -67,9 +67,11 @@ jobs:
             fi
           done
 
-      - name: Push updates
+      - name: Sync and push updates
         env:
           BRANCH_NAME: ${{ github.ref_name }}
         run: |
           branch="${BRANCH_NAME:-master}"
+          git fetch origin "$branch"
+          git rebase "origin/${branch}"
           git push origin "HEAD:${branch}"
