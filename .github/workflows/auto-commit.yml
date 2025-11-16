@@ -1,65 +1,75 @@
-name: Auto Commit
+name: Random Auto Commits
 
 on:
-  push:
-    branches:
-      - master
   schedule:
-    - cron: "*/30 * * * *" 
+    - cron: "7 5 * * *"
+    - cron: "37 17 * * *"
+  workflow_dispatch:
 
 permissions:
-  contents: write 
+  contents: write
 
 jobs:
-  auto_commit:
+  heartbeat:
     runs-on: ubuntu-latest
-
+    env:
+      MIN_COMMITS: 0
+      MAX_COMMITS: 6
+      WAIT_MIN_SECONDS: 5
+      WAIT_MAX_SECONDS: 40
     steps:
-      - name: Random delay
-        run: sleep $((RANDOM % 7501))
-
-      - name: Show current ref
-        run: echo "::debug::Ref = ${{ github.ref }}"
-
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
           fetch-depth: 0
 
-      - name: Update timestamp
+      - name: Configure git user
         run: |
-          timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-          echo "$timestamp" > LAST_UPDATED
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
 
-      - name: Commit updated timestamp
+      - name: Create random commits
         run: |
-          git config --local user.email "itsme.Ronjie@gmail.com"
-          git config --local user.name "itsmeRonjie"
+          MIN=${MIN_COMMITS:-0}
+          MAX=${MAX_COMMITS:-5}
+          if [ "$MAX" -lt "$MIN" ]; then
+            echo "MAX_COMMITS ($MAX) must be greater than or equal to MIN_COMMITS ($MIN)"
+            exit 1
+          fi
 
-          timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-          echo "$timestamp" > LAST_UPDATED
+          RANGE=$((MAX - MIN + 1))
+          COUNT=$((RANDOM % RANGE + MIN))
+          echo "Random commit count for this run: $COUNT"
 
-          git add -A
+          if [ "$COUNT" -le 0 ]; then
+            echo "Randomizer skipped commits this run."
+            exit 0
+          fi
 
-          messages=(
-            "chore(bot): updated timestamp ⏰"
-            "chore(bot): keeping things fresh 🔄"
-            "chore(bot): just another automated update 🤖"
-            "chore(bot): keeping the heartbeat going 💓"
-            "chore(bot): routine check-in 📅"
-            "chore(bot): another tick on the clock 🕒"
-            "chore(bot): minor update, major vibes ✨"
-            "chore(bot): automation doing its thing 🚀"
-            "chore(bot): time update from the bot 🛠️"
-            "chore(bot): staying alive with updates 🎵"
-          )
+          wait_min=${WAIT_MIN_SECONDS:-5}
+          wait_max=${WAIT_MAX_SECONDS:-30}
+          if [ "$wait_max" -lt "$wait_min" ]; then
+            wait_max="$wait_min"
+          fi
 
-          random_index=$((RANDOM % ${#messages[@]}))
-          git commit -m "${messages[$random_index]}" || echo "No changes to commit."
+          for i in $(seq 1 "$COUNT"); do
+            ts=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+            rand=$(printf "%04x" "$RANDOM")
+            echo "${ts} commit ${i}/${COUNT} token:${rand}" > LAST_UPDATED
+            git add LAST_UPDATED
+            git commit -m "chore: random heartbeat ${ts} (${i}/${COUNT})"
 
-      - name: Push changes
-        uses: ad-m/github-push-action@v0.6.0
-        with:
-          directory: "."
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+            if [ "$i" -lt "$COUNT" ]; then
+              sleep_range=$((wait_max - wait_min + 1))
+              sleep_seconds=$((RANDOM % sleep_range + wait_min))
+              echo "Sleeping ${sleep_seconds}s before the next commit..."
+              sleep "$sleep_seconds"
+            fi
+          done
+
+      - name: Push updates
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          branch="${BRANCH_NAME:-master}"
+          git push origin "HEAD:${branch}"
